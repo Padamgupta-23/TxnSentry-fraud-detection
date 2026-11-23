@@ -1,0 +1,18 @@
+{
+  "raw_rows": 284807,
+  "raw_columns": 31,
+  "exact_duplicate_rows_beyond_first_occurrence": 1081,
+  "rows_part_of_duplicate_groups": 1854,
+  "conflicting_label_exact_duplicate_groups": 0,
+  "raw_class_counts": {
+    "0": 284315,
+    "1": 492
+  },
+  "duplicate_policy": "Drop only exact duplicate rows after checking for conflicting labels.",
+  "rows_after_exact_deduplication": 283726,
+  "rows_removed": 1081,
+  "cleaned_class_counts": {
+    "0": 283253,
+    "1": 473
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "Logistic Regression": {
+    "model": "Logistic Regression",
+    "selected_threshold": 0.9999963804103773,
+    "validation_average_precision": 0.6921428909101333,
+    "test_average_precision": 0.7308455981088258,
+    "test_roc_auc": 0.9669516680617892,
+    "test_precision": 0.8604651162790697,
+    "test_recall": 0.7789473684210526,
+    "test_f1": 0.8176795580110497,
+    "test_f2": 0.7939914163090128,
+    "test_alerts": 86,
+    "true_negatives": 56639,
+    "false_positives": 12,
+    "false_negatives": 21,
+    "true_positives": 74,
+    "confusion_matrix_labels_0_1": [
+      [
+        56639,
+        12
+      ],
+      [
+        21,
+        74
+      ]
+    ],
+    "threshold_selection": "Maximum F2 on validation set",
+    "split_sizes": {
+      "train": 170235,
+      "validation": 56745,
+      "test": 56746
+    }
+  },
+  "Random Forest": {
+    "model": "Random Forest",
+    "selected_threshold": 0.3696021698174825,
+    "validation_average_precision": 0.795124520916235,
+    "test_average_precision": 0.8563522076577232,
+    "test_roc_auc": 0.9655687779934204,
+    "test_precision": 0.9605263157894737,
+    "test_recall": 0.7684210526315789,
+    "test_f1": 0.8538011695906432,
+    "test_f2": 0.8004385964912281,
+    "test_alerts": 76,
+    "true_negatives": 56648,
+    "false_positives": 3,
+    "false_negatives": 22,
+    "true_positives": 73,
+    "confusion_matrix_labels_0_1": [
+      [
+        56648,
+        3
+      ],
+      [
+        22,
+        73
+      ]
+    ],
+    "threshold_selection": "Maximum F2 on validation set",
+    "split_sizes": {
+      "train": 170235,
+      "validation": 56745,
+      "test": 56746
+    }
+  },
+  "XGBoost": {
+    "model": "XGBoost",
+    "selected_threshold": 0.8575354218482971,
+    "validation_average_precision": 0.789665180438615,
+    "test_average_precision": 0.8523977399213376,
+    "test_roc_auc": 0.9757733639671897,
+    "test_precision": 0.95,
+    "test_recall": 0.8,
+    "test_f1": 0.8685714285714285,
+    "test_f2": 0.8260869565217391,
+    "test_alerts": 80,
+    "true_negatives": 56647,
+    "false_positives": 4,
+    "false_negatives": 19,
+    "true_positives": 76,
+    "confusion_matrix_labels_0_1": [
+      [
+        56647,
+        4
+      ],
+      [
+        19,
+        76
+      ]
+    ],
+    "threshold_selection": "Maximum F2 on validation set",
+    "split_sizes": {
+      "train": 170235,
+      "validation": 56745,
+      "test": 56746
+    }
+  }
+}

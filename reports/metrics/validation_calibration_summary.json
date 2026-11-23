@@ -1,0 +1,23 @@
+{
+  "Logistic Regression": {
+    "validation_average_precision": 0.6921428909101333,
+    "validation_roc_auc": 0.9711989835487684,
+    "validation_brier_score": 0.02189888215387654,
+    "validation_fraud_prevalence": 0.0016565336152965019,
+    "note": "Scores from class-weighted models may be poorly calibrated; Brier score is not sufficient alone to judge calibration."
+  },
+  "Random Forest": {
+    "validation_average_precision": 0.795124520916235,
+    "validation_roc_auc": 0.9320742117564168,
+    "validation_brier_score": 0.0005025354522227636,
+    "validation_fraud_prevalence": 0.0016565336152965019,
+    "note": "Scores from class-weighted models may be poorly calibrated; Brier score is not sufficient alone to judge calibration."
+  },
+  "XGBoost": {
+    "validation_average_precision": 0.789665180438615,
+    "validation_roc_auc": 0.9658938247132405,
+    "validation_brier_score": 0.0007107193814590573,
+    "validation_fraud_prevalence": 0.0016565336152965019,
+    "note": "Scores from class-weighted models may be poorly calibrated; Brier score is not sufficient alone to judge calibration."
+  }
+}
