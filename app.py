@@ -41,6 +41,12 @@ DATA_CANDIDATES = [
     ROOT / "data" / "raw" / "creditcard.csv",
 ]
 
+DATASET_URL = (
+    "https://huggingface.co/datasets/"
+    "Padam23907987345/txnsentry-fraud-detection/"
+    "resolve/main/creditcard_modeling.csv.gz"
+)
+
 FEATURES = ["Time"] + [f"V{i}" for i in range(1, 29)] + ["Amount"]
 
 DEFAULT_THRESHOLD = 0.3696021698174826
@@ -94,6 +100,21 @@ def load_model(path, modified):
 def load_data(path, modified):
     return pd.read_csv(path)
 
+@st.cache_data(show_spinner="Downloading and loading transaction dataset...")
+def load_hosted_dataset(url):
+    df = pd.read_csv(url, compression="gzip")
+
+    required_columns = FEATURES + ["Class"]
+    missing_columns = [
+        col for col in required_columns if col not in df.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            f"Dataset is missing required columns: {missing_columns}"
+        )
+
+    return df
 
 @st.cache_data
 def read_csv(path, modified=None):
@@ -166,6 +187,23 @@ def score(model, frame):
 
     return model.predict_proba(X)[:, 1]
 
+@st.cache_data(show_spinner="Scoring complete transaction dataset...")
+def score_loaded_dataset(model_path, model_modified, dataset):
+
+    mdl = joblib.load(model_path)
+
+    X = dataset[FEATURES].apply(
+        pd.to_numeric,
+        errors="coerce",
+    )
+
+    if X.isna().any().any():
+        raise ValueError("Dataset contains invalid feature values.")
+
+    if not np.isfinite(X.to_numpy(dtype=float)).all():
+        raise ValueError("Dataset contains non-finite feature values.")
+
+    return mdl.predict_proba(X)[:, 1]
 
 # ============================================================
 # METRICS
@@ -318,27 +356,32 @@ default_threshold = float(
 # LOAD OPTIONAL LABELLED DATASET
 # ============================================================
 
-data_path = next(
+local_dataset = next(
     (path for path in DATA_CANDIDATES if path.exists()),
-    None,
+    None
 )
 
-data = None
+try:
+    if local_dataset is not None:
+        st.info("Using locally available transaction dataset.")
 
-if data_path is not None:
-    try:
-        loaded_data = load_data(
-            str(data_path),
-            data_path.stat().st_mtime,
+        df = load_data(
+            str(local_dataset),
+            local_dataset.stat().st_mtime
         )
 
-        required_columns = set(FEATURES + ["Class"])
+    else:
+        st.info("Loading complete transaction dataset from Hugging Face.")
 
-        if required_columns.issubset(loaded_data.columns):
-            data = loaded_data
+        df = load_hosted_dataset(DATASET_URL)
 
-    except Exception:
-        data = None
+    dataset_available = True
+
+except Exception as e:
+    dataset_available = False
+    df = pd.DataFrame()
+
+    st.error(f"Unable to load transaction dataset: {e}")
 
 
 # ============================================================
@@ -405,52 +448,47 @@ tabs = st.tabs(
     ]
 )
 
-
 # ============================================================
-# SCORE LOCAL DATASET
+# SCORE LOADED DATASET
 # ============================================================
-
-@st.cache_data(show_spinner="Scoring local dataset for analytics...")
-def score_dataset(
-    model_path,
-    model_modified,
-    data_path_str,
-    data_modified,
-):
-    mdl = joblib.load(model_path)
-
-    df = pd.read_csv(data_path_str)
-
-    X = df[FEATURES].apply(
-        pd.to_numeric,
-        errors="coerce",
-    )
-
-    if X.isna().any().any():
-        raise ValueError("Dataset contains invalid feature values.")
-
-    if not np.isfinite(X.to_numpy(dtype=float)).all():
-        raise ValueError("Dataset contains non-finite feature values.")
-
-    scores = mdl.predict_proba(X)[:, 1]
-
-    return df, scores
-
 
 analytics = None
 
-if data is not None:
+if dataset_available and not df.empty:
     try:
-        analytics = score_dataset(
+        if "Class" not in df.columns:
+            raise ValueError("Dataset must contain the Class column.")
+
+        missing_features = [
+            col for col in FEATURES if col not in df.columns
+        ]
+
+        if missing_features:
+            raise ValueError(
+                "Dataset is missing features: "
+                + ", ".join(missing_features)
+            )
+
+        # Validate labels.
+        labels = pd.to_numeric(df["Class"], errors="coerce")
+
+        if labels.isna().any() or not labels.isin([0, 1]).all():
+            raise ValueError(
+                "Class must contain only numeric 0 and 1 labels."
+            )
+
+        # Score using only the 30 model features.
+        dataset_scores = score_loaded_dataset(
             str(MODEL_PATH),
             MODEL_PATH.stat().st_mtime,
-            str(data_path),
-            data_path.stat().st_mtime,
+            df,
         )
 
-    except Exception:
-        analytics = None
+        analytics = (df, dataset_scores)
 
+    except Exception as e:
+        st.error(f"Unable to calculate dataset analytics: {e}")
+        analytics = None
 
 # ============================================================
 # TAB 1: EXECUTIVE OVERVIEW
@@ -774,7 +812,6 @@ with tabs[0]:
 
             st.write(description)
 
-
 # ============================================================
 # TAB 2: TRANSACTION EXPLORER
 # ============================================================
@@ -789,7 +826,9 @@ with tabs[1]:
         "never passed into the model."
     )
 
-    if data is not None:
+    if analytics is not None:
+
+        df, _ = analytics
 
         mode = st.radio(
             "Select example",
@@ -802,20 +841,13 @@ with tabs[1]:
         )
 
         if mode == "Fraud example":
-
-            choices = data.index[
-                data["Class"].astype(int) == 1
-            ]
+            choices = df.index[df["Class"].astype(int) == 1]
 
         elif mode == "Legitimate example":
-
-            choices = data.index[
-                data["Class"].astype(int) == 0
-            ]
+            choices = df.index[df["Class"].astype(int) == 0]
 
         else:
-
-            choices = data.index
+            choices = df.index
 
         if len(choices):
 
@@ -827,28 +859,21 @@ with tabs[1]:
                 )
             )
 
-            row = data.loc[row_idx]
-
+            row = df.loc[row_idx]
             y = int(row["Class"])
 
             s = float(
                 score(
                     model,
                     pd.DataFrame([
-                        {
-                            c: row[c]
-                            for c in FEATURES
-                        }
+                        {c: row[c] for c in FEATURES}
                     ]),
                 )[0]
             )
 
             a, b, c = st.columns(3)
 
-            a.metric(
-                "Model score",
-                f"{s:.6f}",
-            )
+            a.metric("Model score", f"{s:.6f}")
 
             b.metric(
                 "Known dataset label",
@@ -861,14 +886,11 @@ with tabs[1]:
             )
 
             if s >= threshold:
-
                 st.error(
                     "The model flags this row for review; "
                     "that is a screening recommendation."
                 )
-
             else:
-
                 st.info(
                     "The model does not flag this row at the "
                     "current cutoff. A missed fraud is possible."
@@ -877,9 +899,7 @@ with tabs[1]:
             st.markdown("#### Selected transaction fields")
 
             st.dataframe(
-                pd.DataFrame([
-                    row[FEATURES].to_dict()
-                ]),
+                pd.DataFrame([row[FEATURES].to_dict()]),
                 use_container_width=True,
                 hide_index=True,
             )
@@ -890,30 +910,13 @@ with tabs[1]:
             )
 
         else:
-
             st.warning("No rows found for this label.")
 
     else:
-
-        st.info(
-            "Transaction-level exploration requires a "
-            "labelled transaction dataset."
+        st.error(
+            "The labelled transaction dataset could not be loaded. "
+            "Check the dataset loading error above."
         )
-
-        st.markdown("#### What you can do")
-
-        st.write(
-            "Upload a CSV containing the 30 required model features "
-            "in the Batch screening section to obtain "
-            "transaction-level risk scores."
-        )
-
-        st.caption(
-            "Individual historical fraud labels are not included "
-            "in the public deployment. This keeps the original "
-            "dataset separate from the deployed application."
-        )
-
 
 # ============================================================
 # TAB 3: BATCH SCREENING
