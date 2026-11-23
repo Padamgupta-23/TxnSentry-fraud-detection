@@ -26,8 +26,8 @@ The application supports:
 
 ## Live application
 
-- **Streamlit demo:** [Add your deployed application URL]
-- **GitHub repository:** [Add your repository URL]
+- **Streamlit demo:** [[Add your deployed application URL](https://txnsentry-fraud-detection.streamlit.app/)]
+- **GitHub repository:** [[Add your repository URL](https://github.com/Padamgupta-23/TxnSentry-fraud-detection)]
 
 ## Dataset
 
@@ -195,7 +195,7 @@ TxnSentry/
 ### 1. Clone the repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone [YOUR_GITHUB_REPOSITORY_URL](https://github.com/Padamgupta-23/TxnSentry-fraud-detection)
 cd TxnSentry
 ```
 
